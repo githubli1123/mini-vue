@@ -1,9 +1,11 @@
 class ReactiveEffect {
     private _fn;
-    constructor(fn) {
-        this._fn = fn
+    public scheduler;
+    constructor(fn, scheduler?) {
+        this._fn = fn;
+        this.scheduler = scheduler;
     }
-    run(){
+    run() {
         activeEffect = this;
         return this._fn();
     }
@@ -15,12 +17,12 @@ export function track(target, key) {
     // target -> key -> dep
     // 对象 -> 属性 -> 相关依赖（函数）
     let depsMap = targetMap.get(target);
-    if(!depsMap) {
+    if (!depsMap) {
         depsMap = new Map();
         targetMap.set(target, depsMap);
     }
     let dep = depsMap.get(key);
-    if(!dep){
+    if (!dep) {
         dep = new Set();
         depsMap.set(key, dep);
     }
@@ -29,17 +31,23 @@ export function track(target, key) {
 
 export function trigger(target, key) {
     let depsMap = targetMap.get(target);
-    if(!depsMap) return;
+    if (!depsMap) return;
     let dep = depsMap.get(key);
-    if(!dep) return;
-    for(let effect of dep) {
-        effect.run();
+    if (!dep) return;
+    for (let effect of dep) {
+        if (effect.scheduler) {
+            effect.scheduler();
+        } else {
+            effect.run();
+        }
     }
 }
 
 let activeEffect;
-export function effect(fn) {
-    const _effect = new ReactiveEffect(fn);
+export function effect(fn, options?) {
+    // fn
+    const scheduler = options?.scheduler;
+    const _effect = new ReactiveEffect(fn, scheduler);
     _effect.run();
     return _effect.run.bind(_effect); // ❓ why bind?
 }

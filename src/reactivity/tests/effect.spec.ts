@@ -29,4 +29,33 @@ describe('effect', () => {
         expect(foo).toBe(12);
         expect(r).toBe("foo");
     });
+
+    it ('scheduler', () => {
+        // 通过 effect 的第二个参数给定的 一个 scheduler 的 fn
+        // effect 第一次执行的时候 还会执行 scheduler
+        // 个人感受： effect 执行后会先执行一次传参函数，然后返回一个可以调用传参函数的对象，
+        // 函数中的 getter 收集依赖，将函数与数据绑定；set 行为会触发 effect 中的函数调用一次（ setter 触发依赖 ）。
+        // 但是现在对 effect 进行改造，希望中断这个 setter 触发依赖的调用（也就是第一个传参函数不调用，第二个调用），
+        // 此时，
+        let dummy;
+        let run: any;
+        const scheduler = jest.fn(() => {
+            run = runner;
+        });
+        const obj = reactive({ foo: 1 });
+        const runner = effect(() => {
+            dummy = obj.foo;
+        }, { scheduler });
+        expect(dummy).toBe(1);
+        expect(scheduler).not.toHaveBeenCalled();
+        // ------------------------------------------- //
+        // should be called on first trigger
+        obj.foo++;
+        expect(dummy).toBe(1); // should not run yet
+        expect(scheduler).toHaveBeenCalledTimes(1);
+        // ------------------------------------------- //
+        // manually run
+        run();
+        expect(dummy).toBe(2); // should have run
+    });
 });
