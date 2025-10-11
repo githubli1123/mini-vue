@@ -1,7 +1,11 @@
+import { extend } from "../shared";
 class ReactiveEffect {
     private _fn;
+    public deps = [];
     public scheduler;
-    constructor(fn, scheduler?) {
+    public onStop?: () => void;
+    private active = true; // ⚡ 优化，多次 stop，只清空一次
+    constructor(fn, scheduler?: Function) {
         this._fn = fn;
         this.scheduler = scheduler;
     }
@@ -9,8 +13,20 @@ class ReactiveEffect {
         activeEffect = this;
         return this._fn();
     }
+    stop(){
+        if(this.active){
+            cleanupEffect(this);
+            this.active = false;
+            if(this.onStop) this.onStop();
+        }
+    }
 }
 
+function cleanupEffect(effect){
+    effect.deps.forEach((dep) => {
+        dep.delete(effect);
+    })
+}
 
 const targetMap = new Map();
 export function track(target, key) {
@@ -26,10 +42,18 @@ export function track(target, key) {
         dep = new Set();
         depsMap.set(key, dep);
     }
-    dep.add(activeEffect);
+    if(!activeEffect) return;
+    dep.add(activeEffect); // 让属性记住这个 effect
+    activeEffect.deps.push(dep); // 让 effect 记录有哪些 dep 依赖它
 }
 
 export function trigger(target, key) {
+    // target       : { prop: 1}
+    // key          : prop
+    
+    // targetMap    : { [target]: { [key]: [effect] } }
+    // depsMap      : { [key]: [effect] }
+    // dep          : [effect]
     let depsMap = targetMap.get(target);
     if (!depsMap) return;
     let dep = depsMap.get(key);
@@ -45,9 +69,14 @@ export function trigger(target, key) {
 
 let activeEffect;
 export function effect(fn, options?) {
-    // fn
-    const scheduler = options?.scheduler;
-    const _effect = new ReactiveEffect(fn, scheduler);
+    const _effect = new ReactiveEffect(fn, options?.scheduler);
+    extend(_effect, options);
     _effect.run();
-    return _effect.run.bind(_effect); // ❓ why bind?
+    const runner:any = _effect.run.bind(_effect); // ❓ why bind?
+    runner.effect = _effect; // 返回的 runner 上挂载一个 effect 属性，指向这个 ReactiveEffect 实例
+    return runner;
+}
+
+export function stop(runner){
+    runner.effect.stop();
 }

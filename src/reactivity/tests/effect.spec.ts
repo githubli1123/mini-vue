@@ -1,5 +1,5 @@
 import { reactive } from '../reactive'
-import { effect } from '../effect'
+import { effect, stop } from '../effect'
 
 describe('effect', () => {
     it('happy path', () => {
@@ -8,7 +8,9 @@ describe('effect', () => {
         });
         let nextAge;
         effect(() => {
-            // 将 user 这个响应式数据与 nextAge 进行关联
+            // 副作用行为 ： 【 将 user 这个响应式数据与 nextAge 进行关联 】 ==> 这个函数可以理解为一个行为
+            // 也可以理解为一个副作用函数
+            // effect 是和 reactive 进行配合使用的
             nextAge = user.age + 1;
         });
         expect(nextAge).toBe(11);
@@ -58,4 +60,37 @@ describe('effect', () => {
         run();
         expect(dummy).toBe(2); // should have run
     });
+
+    it('stop', () => {
+        let dummy; // 写到这里，私以为这个变量不仅是用来测试的，还可以表达一些含义：比如页面中某个地方的值。
+        const obj = reactive({ prop: 1 });
+        const runner = effect(() => {
+            dummy = obj.prop;
+        });
+        obj.prop = 2;
+        expect(dummy).toBe(2);
+        // stop runner 
+        stop(runner);
+        obj.prop = 3;
+        expect(dummy).toBe(2);
+
+        // stopped effect should still be manually callable
+        runner();
+        expect(dummy).toBe(3);
+    });
+
+    it('onStop', () => {
+        const obj = reactive({
+            foo: 1
+        });
+        const onStop = jest.fn();
+        let dummy;
+        const runner = effect(() => {
+            dummy = obj.foo;
+        }, {
+            onStop
+        });
+        stop(runner);
+        expect(onStop).toHaveBeenCalledTimes(1);
+    })
 });
