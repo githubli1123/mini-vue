@@ -142,7 +142,7 @@ Vue 3 的真实实现比上面复杂得多，但核心思想完全一样。
 
 > 响应式对象是一个东西，proxy 中会使用 effect 的 track 和 trigger ，一个 effect 的传参函数（runner）中可能有多个响应式对象的 get 操作，那么 effect 的 runner （依赖）就会被收集起来。
 >
-> track：需要知道这些信息：哪个对象的哪个key（借助 proxy）、依赖是什么（借助 effect API，开发者手动告知）
+> track：需要知道这些信息：哪个对象的哪个key（借助 proxy）、依赖是什么（借助 effect API，开发者手动告知）。
 >
-> trigger：需要有的信息：哪个对象的哪个key（借助 proxy）、依赖有哪些（借助 effect API，开发者手动告知后存储在的deps变量中，具体怎么找到 deps 是借助 Map 的）
+> trigger：需要有的信息：哪个对象的哪个key（借助 proxy）、依赖有哪些（借助 effect API，开发者手动告知后存储在的deps变量中，具体怎么找到 deps 是借助 Map 的）。
 
