@@ -1,5 +1,5 @@
 import { effect } from "../effect";
-import { ref, isRef, unRef } from "../ref";
+import { ref, isRef, unRef, proxyRefs } from "../ref";
 
 describe("ref", () => {
     it("happy path", () => {
@@ -53,4 +53,23 @@ describe("ref", () => {
         expect(unRef(user)).toBe(user);
     });
 
+    it("proxyRefs", () => {
+        const user = {
+            age: ref(10),
+            name: "xiaoming"
+        };
+        const proxyUser = proxyRefs(user);
+        expect(user.age.value).toBe(10);
+        expect(proxyUser.age).toBe(10);
+        expect(proxyUser.name).toBe("xiaoming");
+        // 场景：Vue3 在 setup() 返回的对象上就是使用 proxyRefs
+
+        proxyUser.age = 20;
+        expect(proxyUser.age).toBe(20);
+        expect(user.age.value).toBe(20);
+
+        proxyUser.age = ref(30);
+        expect(proxyUser.age).toBe(30);
+        expect(user.age.value).toBe(30);
+    });
 });

@@ -39,6 +39,12 @@ function trackRefValue(ref) {
     }
 }
 
+
+export function ref(value) {
+    const refImpl = new RefImpl(value);
+    return refImpl;
+}
+
 export function isRef(value) {
     return !!value?.__v_isRef;
 }
@@ -47,7 +53,18 @@ export function unRef(ref) {
     return isRef(ref) ? ref.value : ref;
 }
 
-export function ref(value) {
-    const refImpl = new RefImpl(value);
-    return refImpl;
+export function proxyRefs(objectWithRefs) {
+    // 当访问属性时，如果是 ref 类型，就返回 .value
+    return new Proxy(objectWithRefs, {
+        get(target, key) {
+            return unRef(Reflect.get(target, key));
+        },
+        set(target, key, value) {
+            if (isRef(target[key]) && !isRef(value)) {
+                return target[key].value = value;
+            }else {
+                return Reflect.set(target, key, value);
+            }
+        }
+    });
 }
