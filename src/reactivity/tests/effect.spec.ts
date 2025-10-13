@@ -32,7 +32,7 @@ describe('effect', () => {
         expect(r).toBe("foo");
     });
 
-    it ('scheduler', () => {
+    it('scheduler', () => {
         // 通过 effect 的第二个参数给定的 一个 scheduler 的 fn
         // effect 第一次执行的时候 还会执行 scheduler
         // 个人感受： effect 执行后会先执行一次传参函数，然后返回一个可以调用传参函数的对象，
@@ -73,10 +73,12 @@ describe('effect', () => {
         stop(runner);
         obj.prop = 3;
         expect(dummy).toBe(2);
+        obj.prop++; // obj.prop = obj.prop + 1 // get + set
+        expect(dummy).toBe(2);
 
         // stopped effect should still be manually callable
         runner();
-        expect(dummy).toBe(3);
+        expect(dummy).toBe(4);
     });
 
     it('onStop', () => {

@@ -1,28 +1,39 @@
 import { extend } from "../shared";
+
+let activeEffect;
+let shouldTrack: boolean;
 class ReactiveEffect {
     private _fn;
     public deps = [];
     public scheduler;
     public onStop?: () => void;
-    private active = true; // ⚡ 优化，多次 stop，只清空一次
+    private active = true; // 作用：⚡ 优化，多次 stop，只清空一次， false 表示已经 stop 了
     constructor(fn, scheduler?: Function) {
         this._fn = fn;
         this.scheduler = scheduler;
     }
     run() {
+        if (!this.active) { // 如果已经 stop 了，就直接执行函数，不收集依赖。 
+            // 解决：测试代码中 get 一次 reactive 对象的属性值后会重新依赖收集，导致清空的依赖依然会在 set 操作后触发。
+            return this._fn();
+        }
+        shouldTrack = true;
         activeEffect = this;
-        return this._fn();
+        const result = this._fn();
+        // reset
+        shouldTrack = false;
+        return result;
     }
-    stop(){
-        if(this.active){
+    stop() {
+        if (this.active) {
             cleanupEffect(this);
             this.active = false;
-            if(this.onStop) this.onStop();
+            if (this.onStop) this.onStop();
         }
     }
 }
 
-function cleanupEffect(effect){
+function cleanupEffect(effect) {
     effect.deps.forEach((dep) => {
         dep.delete(effect);
     })
@@ -42,7 +53,8 @@ export function track(target, key) {
         dep = new Set();
         depsMap.set(key, dep);
     }
-    if(!activeEffect) return;
+    if (!activeEffect) return;
+    if (!shouldTrack) return; // 不允许收集依赖
     dep.add(activeEffect); // 让属性记住这个 effect
     activeEffect.deps.push(dep); // 让 effect 记录有哪些 dep 依赖它
 }
@@ -50,7 +62,7 @@ export function track(target, key) {
 export function trigger(target, key) {
     // target       : { prop: 1}
     // key          : prop
-    
+
     // targetMap    : { [target]: { [key]: [effect] } }
     // depsMap      : { [key]: [effect] }
     // dep          : [effect]
@@ -67,16 +79,16 @@ export function trigger(target, key) {
     }
 }
 
-let activeEffect;
+
 export function effect(fn, options?) {
     const _effect = new ReactiveEffect(fn, options?.scheduler);
     extend(_effect, options);
     _effect.run();
-    const runner:any = _effect.run.bind(_effect); // ❓ why bind?
+    const runner: any = _effect.run.bind(_effect); // ❓ why bind?
     runner.effect = _effect; // 返回的 runner 上挂载一个 effect 属性，指向这个 ReactiveEffect 实例
     return runner;
 }
 
-export function stop(runner){
+export function stop(runner) {
     runner.effect.stop();
 }
