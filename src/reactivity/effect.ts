@@ -36,13 +36,16 @@ class ReactiveEffect {
 function cleanupEffect(effect) {
     effect.deps.forEach((dep) => {
         dep.delete(effect);
-    })
+    });
+    effect.deps.length = 0;
 }
 
 const targetMap = new Map();
 export function track(target, key) {
     // target -> key -> dep
     // 对象 -> 属性 -> 相关依赖（函数）
+    if (!isTracking()) return;
+
     let depsMap = targetMap.get(target);
     if (!depsMap) {
         depsMap = new Map();
@@ -53,11 +56,19 @@ export function track(target, key) {
         dep = new Set();
         depsMap.set(key, dep);
     }
-    if (!activeEffect) return;
-    if (!shouldTrack) return; // 不允许收集依赖
-    dep.add(activeEffect); // 让属性记住这个 effect
-    activeEffect.deps.push(dep); // 让 effect 记录有哪些 dep 依赖它
+
+    // 已经在 dep 中了，不需要再收集了
+    if (dep.has(activeEffect)) return;
+    
+    dep.add(activeEffect); // 从属性找到这个 effect
+    activeEffect.deps.push(dep); // 从 effect 找到 dep 
 }
+
+
+function isTracking() {
+    return shouldTrack && activeEffect !== undefined;
+}
+
 
 export function trigger(target, key) {
     // target       : { prop: 1}
