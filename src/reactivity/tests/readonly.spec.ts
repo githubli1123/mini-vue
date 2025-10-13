@@ -1,5 +1,4 @@
-import { readonly } from '../reactive';
-import { isReadonly } from '../reactive';
+import { readonly, isReadonly, isProxy } from '../reactive';
 
 describe('readonly', () => {
     it('should make nested values readonly', () => {
@@ -13,6 +12,7 @@ describe('readonly', () => {
         // expect(isReadonly(wrapped.foo)).toBe(true) // TODO 这个测试目前不会通过，因为 foo 是 number 类型，不是对象
         expect(isReadonly(wrapped.bar)).toBe(true)
         expect(isReadonly(original.bar)).toBe(false)
+        expect(isProxy(wrapped)).toBe(true)
     })
 
     it('warn then call set', () => {
