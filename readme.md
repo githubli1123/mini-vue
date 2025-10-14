@@ -146,3 +146,12 @@ Vue 3 的真实实现比上面复杂得多，但核心思想完全一样。
 >
 > trigger：需要有的信息：哪个对象的哪个key（借助 proxy）、依赖有哪些（借助 effect API，开发者手动告知后存储在的deps变量中，具体怎么找到 deps 是借助 Map 的）。
 
+
+
+
+
+## 实现 runtime-core
+
+着重解决两次 `const subTree = instance.render();` 此处的错误。
+
+其中一次的错误可以让你知道需要将 component 和 element 两种类型进行分别处理

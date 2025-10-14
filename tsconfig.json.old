@@ -1,0 +1,135 @@
+{
+  // tsconfig.json - TypeScript 编译配置文件
+  // 详细说明文档：https://www.typescriptlang.org/tsconfig
+
+  "compilerOptions": {
+    /* ================= 基础选项 ================= */
+
+    // 编译目标 ECMAScript 版本：控制编译后的 JavaScript 语法
+    "target": "ES2022", // 可选: ES5, ES6/ES2015, ES2020, ESNext
+
+    // 模块系统类型
+    "module": "ESNext", // 可选: CommonJS, AMD, UMD, System, ESNext
+
+    // 是否生成 source map 文件，用于调试
+    "sourceMap": true,
+
+    // 输出文件目录（相对于 tsconfig 文件）
+    // 👇 将 outDir 改为 lib 目录下的临时构建目录 与 rollup 配合使用
+    "outDir": "./lib/.build",
+
+    // TypeScript 源文件所在目录
+    "rootDir": "./src",
+
+    // 是否允许 JavaScript 文件被编译（混合项目用）
+    "allowJs": false,
+
+    // 是否检查 JS 文件类型（需要 allowJs=true）
+    "checkJs": false,
+
+    // 是否启用 JSX 支持（React / Solid / Preact）
+    "jsx": "react-jsx", // 可选: "react", "react-jsx", "preserve"
+
+    /* ================= 严格模式 ================= */
+
+    // 启用所有严格类型检查选项
+    "strict": true,
+
+    // 禁止使用隐式 any 类型
+    "noImplicitAny": false,
+
+    // 检查空值安全（strictNullChecks）
+    "strictNullChecks": true,
+
+    // 禁止未使用的局部变量
+    "noUnusedLocals": true,
+
+    // 禁止未使用的函数参数
+    "noUnusedParameters": true,
+
+    // 禁止隐式返回 undefined
+    "noImplicitReturns": true,
+
+    /* ================= 模块解析 ================= */
+
+    // 模块解析策略
+    "moduleResolution": "bundler", // 可选: "node", "bundler", "classic"
+
+    // 允许导入 JSON 文件
+    "resolveJsonModule": true,
+
+    // 允许在 import 语句中省略扩展名
+    "allowImportingTsExtensions": false,
+
+    // 基础路径（用于简化 import 路径）
+    "baseUrl": "./",
+
+    // 路径别名设置（结合 baseUrl）
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    // 声明文件 (.d.ts) 搜索目录
+    "typeRoots": ["./node_modules/@types"],
+
+    // 指定要包含的类型包（如果不想自动包含全部）
+    // "types": ["node", "jest"],
+
+    /* ================= 输出控制 ================= */
+
+    // 删除编译输出中的注释
+    "removeComments": false,
+
+    // 启用增量编译
+    "incremental": true,
+
+    // 增量编译缓存文件
+    "tsBuildInfoFile": "./.tsbuildinfo",
+
+    // 不输出声明文件
+    "declaration": true,
+
+    // 声明文件输出目录
+    "declarationDir": "./lib/types", // 或 "./lib" 与 outDir 相同
+
+    // 保留 JSX 文件的扩展（仅限 preserve 模式）
+    // "jsxImportSource": "react",
+
+    /* ================= ES 模块相关 ================= */
+
+    // 是否在输出中包含 import 语句的扩展名
+    "allowSyntheticDefaultImports": true,
+
+    // 将 import/export 保留为 ES 模块语法
+    "esModuleInterop": true,
+
+    // 支持从模块中导入默认导出
+    "isolatedModules": true,
+
+    // 启用顶层 await
+    "moduleDetection": "force",
+
+    /* ================= 性能优化 ================= */
+
+    // 跳过 node_modules 类型检查（常用优化）
+    "skipLibCheck": true,
+
+    // 强制文件名大小写一致
+    "forceConsistentCasingInFileNames": true
+  },
+
+  /* ================= 项目文件匹配 ================= */
+
+  // 包含的文件或目录
+  "include": ["src/**/*"],
+
+  // 排除的文件或目录
+  "exclude": ["node_modules", "dist", "build", "lib"] // 👈 别忘了把 lib 也加入 exclude
+
+  /* ================= 工程引用（多包项目） ================= */
+  // 如果你有 monorepo / 多包结构，可以启用 composite 以支持项目引用
+  // "references": [
+  //   { "path": "../shared" },
+  //   { "path": "../core" }
+  // ]
+}
