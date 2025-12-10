@@ -7,7 +7,10 @@
   "types": "lib/types/index.d.ts",
   "scripts": {
     "test": "jest",
-    "build": "rollup -c rollup.config.js"
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "rollup -c",
+    "build": "npm run build:bundle && npm run build:types",
+    "dev": "rollup -c -w"
   },
   "keywords": [],
   "author": "",

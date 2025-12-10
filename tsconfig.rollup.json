@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",           // ✅ 给 Rollup 吃 ESM
+    "moduleResolution": "Bundler",// ✅ 配 bundler
+    "sourceMap": true,
+    "rootDir": "src",
+
+    "declaration": false,         // ❗打包时不生成 d.ts
+    "outDir": "./lib/.build"      // 可有可无，插件一般不需要这个
+  },
+  "include": ["src/**/*"]
+}

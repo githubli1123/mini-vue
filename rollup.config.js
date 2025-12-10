@@ -21,6 +21,8 @@ export default {
 
   plugins: [
     // 使用 Rollup 打包 TypeScript 项目，您需要安装并配置专门的 TypeScript 插件
-    typescript(),
+    typescript({
+      tsconfig: "./tsconfig.rollup.json",
+    }),
   ],
 };

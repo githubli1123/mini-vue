@@ -155,3 +155,36 @@ Vue 3 的真实实现比上面复杂得多，但核心思想完全一样。
 着重解决两次 `const subTree = instance.render();` 此处的错误。
 
 其中一次的错误可以让你知道需要将 component 和 element 两种类型进行分别处理
+
+
+
+当前目标：
+
+实现 render 的超级基础功能，可以把手动创建的虚拟节点显示到浏览器页面上。
+
+```js
+const App = {
+  render() {
+    return h(
+      "div", 
+      {id : "root", class : ["red", "hard"]},
+      "hi, " + this.msg
+    );
+  },
+  setup() {
+    // composition api
+    return {
+      msg: "mini-vue",
+    };
+  },
+};
+```
+
+
+
+开发者使用 createApp 和 mount 方法来把 DOM 渲染并挂载
+
+mini-vue 内部接收一个 component 组件配置对象（render、setup）和挂载容器，之后创建 vnode 并且 render 这个 vnode（type、props、children）。
+
+render 会调用 patch， patch 会根据 type 区分 DOM 和 vnode 分别处理。如果是 vnode，则会创建 component instance （这是一个对象，把 vnode 包在里面，并且单独把 vnode type 属性拿出以便后续使用），然后执行 component setup 方法，并把 render 方法挂到该 component instance 上，接着继续执行 render 拿到返回值 subTree （在这个例子中就是 h 函数中的返回值，一个 vnode ），后面就是继续 patch 处理。如果是 DOM ，则会进入创建真实 DOM ，赋予 props， append 挂载这个流程。
+
