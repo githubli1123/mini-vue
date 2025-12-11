@@ -1,5 +1,6 @@
 import { h } from "../../lib/mini-vue.esm.js";
 
+window.self = null; // for debug
 export const App = {
   // .vue
   // <template></template>
@@ -7,6 +8,7 @@ export const App = {
 
   // 必须写 render
   render() {
+    window.self = this; // for debug
     // 看到这里，其实大致就可以理解为什么推荐 Vue 的 template 中先写一个 div 包裹所有内容
     // 这里的 h("div", ... , ...) 函数其实就相当于 template 中的 div
     return h(
