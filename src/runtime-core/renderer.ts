@@ -40,12 +40,19 @@ function mountElement(vnode, container) {
     }
     // props
     const { props } = vnode;
-    if (props) {
-        for (const key in props) {
-            const value = props[key];
+    for (const key in props) {
+        const value = props[key];
+        // 具体的 click -> 通用
+        // on + EventName
+        const isOn = (key: string) => /^on[A-Z]/.test(key);
+        if (isOn(key)) {
+            const event = key.slice(2).toLowerCase();
+            el.addEventListener(event, value);
+        } else {
             el.setAttribute(key, value);
         }
     }
+
 
     container.append(el);
 }
