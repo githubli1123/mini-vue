@@ -30,7 +30,7 @@ function setupStatefulComponent(instance) {
                 return setupState[key];
             }
         }
-    })
+    });
 
     const { setup } = Component;
 
