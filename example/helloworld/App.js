@@ -1,7 +1,9 @@
 import { h } from "../../lib/mini-vue.esm.js";
+import { Foo } from "./Foo.js";
 
 window.self = null; // for debug
 export const App = {
+  name: "App",
   // .vue
   // <template></template>
   // render
@@ -23,8 +25,13 @@ export const App = {
           console.log("mousedown");
         },
       },
-      // 1. string
-      // "hi, mini-vue",
+      // 4. Component
+      [h("div", {}, `hi, ${this.msg}`), h(Foo, { count: 1 })]
+      // 3. setupState
+      // 常规： 直接把 setup 的返回值绑定到 render 的 this 上
+      // 实际： 给 component 实例上做了一个代理 proxy
+      // `hi, ${this.msg}`
+      // this.$el -> get root element
       // 2. Array
       // 使用 h 函数以及 Array 的意思是 : 声明 vnode 和 vnode 之间的父子关系
       // 给到 mini-vue 后会调用 h 函数生成 vnode ， 然后交给 patch 做拆包处理
@@ -40,11 +47,8 @@ export const App = {
       //     ]
       //   )
       // ]
-      // 3. setupState
-      // 常规： 直接把 setup 的返回值绑定到 render 的 this 上
-      // 实际： 给 component 实例上做了一个代理 proxy
-      `hi, ${this.msg}`
-      // this.$el -> get root element
+      // 1. string
+      // "hi, mini-vue",
     );
   },
 
