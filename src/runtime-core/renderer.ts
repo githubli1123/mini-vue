@@ -77,7 +77,7 @@ function mountComponent(initialVNode, container) {
 
 function setupRenderEffect(instance, initialVNode, container) {
     const { proxy } = instance;
-    // subTree is vnode
+    // subTree is vnode ; render function can get setupState/props through proxy
     const subTree = instance.render.call(proxy);
 
     // vnode -> patch
