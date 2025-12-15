@@ -9,7 +9,7 @@ export function provide(key, value) {
         let { provides } = currentInstance;
         const parentProvides = currentInstance.parent.provides;
 
-        // init
+        // init provides
         // 初始化 provides：子组件默认继承父组件的 provides
         // 后续会检查，再次初始化：子组件需要提供新值时才创建自己的空间，否则通过原型链复用父值
         // 本质是 Copy-on-Write(写时复制)模式 + 原型链继承 的完美结合，既保证隔离性又极致高效。
