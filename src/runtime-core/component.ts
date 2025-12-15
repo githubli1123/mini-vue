@@ -6,7 +6,8 @@ import { initSlots } from "./componentSlots";
 
 
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
+    console.log('createComponentInstance', parent);
     const component = {
         vnode,
         type: vnode.type,
@@ -14,6 +15,8 @@ export function createComponentInstance(vnode) {
         proxy: null,
         props: {},
         slots: {},
+        provides: parent ? parent.provides : {}, // 这个很关键
+        parent,
         emit: () => { },
     };
 
