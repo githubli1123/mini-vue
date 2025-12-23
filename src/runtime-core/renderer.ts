@@ -3,6 +3,7 @@ import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
+import { effect } from "../reactivity/effect";
 
 export function createRenderer(options) {
 
@@ -10,11 +11,13 @@ export function createRenderer(options) {
 
     function render(vnode, container) {
         // patch
-        patch(vnode, container, undefined);
+        patch(null, vnode, container, undefined);
     }
 
-    function patch(vnode, container, parentComponent) {
-        const { type, shapeFlag } = vnode;
+    // n1 -> oldVNode
+    // n2 -> newVNode
+    function patch(n1, n2, container, parentComponent) {
+        const { type, shapeFlag } = n2;
         // 区分是 element 还是 component 类型
         // shapeFlag
         // vnode -> flag
@@ -22,36 +25,46 @@ export function createRenderer(options) {
         // Fragment -> 只渲染 children
         switch (type) {
             case Fragment:
-                processFragment(vnode, container, parentComponent);
+                processFragment(n1, n2, container, parentComponent);
                 break;
 
             case Text:
-                processText(vnode, container);
+                processText(n1, n2, container);
                 break;
 
             default:
                 if (shapeFlag & ShapeFlags.ELEMENT) {
-                    processElement(vnode, container, parentComponent);
+                    processElement(n1, n2, container, parentComponent);
                 } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-                    porcessComponent(vnode, container, parentComponent);
+                    porcessComponent(n1, n2, container, parentComponent);
                 }
                 break;
         }
     }
 
-    function processText(vnode, container) {
-        const { children } = vnode;
-        const text = (vnode.el = document.createTextNode(children));
+    function processText(n1, n2, container) {
+        const { children } = n2;
+        const text = (n2.el = document.createTextNode(children));
         container.append(text);
     }
 
-    function processFragment(vnode, container, parentComponent) {
+    function processFragment(n1, n2, container, parentComponent) {
         // Implementation for processing Fragment
-        mountChildren(vnode, container, parentComponent);
+        mountChildren(n2, container, parentComponent);
     }
 
-    function processElement(vnode, container, parentComponent) {
-        mountElement(vnode, container, parentComponent);
+    function processElement(n1, n2, container, parentComponent) {
+        if (!n1) {
+            mountElement(n2, container, parentComponent);
+        } else {
+            patchElement(n1, n2, container);
+        }
+    }
+
+    function patchElement(n1, n2, container) {
+        console.log('patchElement');
+        console.log(n1);
+        console.log(n2);
     }
 
     function mountElement(vnode, container, parentComponent) {
@@ -80,12 +93,12 @@ export function createRenderer(options) {
 
     function mountChildren(vnode, container, parentComponent) {
         vnode.children.forEach((child) => {
-            patch(child, container, parentComponent);
+            patch(null, child, container, parentComponent);
         });
     }
 
-    function porcessComponent(vnode, container, parentComponent) {
-        mountComponent(vnode, container, parentComponent);
+    function porcessComponent(n1, n2, container, parentComponent) {
+        mountComponent(n2, container, parentComponent);
     }
 
     function mountComponent(initialVNode, container, parentComponent) {
@@ -97,17 +110,33 @@ export function createRenderer(options) {
     }
 
     function setupRenderEffect(instance, initialVNode, container) {
-        const { proxy } = instance;
-        // subTree is vnode ; render function can get setupState/props through proxy
-        const subTree = instance.render.call(proxy);
+        effect(() => {
+            if (!instance.isMounted) {
+                console.log('init');
+                const { proxy } = instance;
+                // subTree is vnode ; render function can get setupState/props through proxy
+                const subTree = (instance.subTree = instance.render.call(proxy));
+                console.log('subTree', subTree);
+                // vnode -> patch
+                // vnode -> element -> mountElement
+                patch(null, subTree, container, instance);
+                // element -> mount to container
+                initialVNode.el = subTree.el;
+                instance.isMounted = true;
+            } else {
+                console.log('update');
+                const { proxy } = instance;
+                const subTree = instance.render.call(proxy);
+                const prevSubTree = instance.subTree;
 
-        // vnode -> patch
-        // vnode -> element -> mountElement
+                console.log('prevSubTree', prevSubTree);
+                console.log('subTree', subTree);
 
-        patch(subTree, container, instance);
+                patch(prevSubTree, subTree, container, instance);
+                instance.subTree = subTree;
+            }
 
-        // element -> mount to container
-        initialVNode.el = subTree.el;
+        });
     }
 
     return {

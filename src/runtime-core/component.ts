@@ -3,6 +3,7 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initProps } from "./componentProps";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
+import { proxyRefs } from "../reactivity";
 
 
 
@@ -17,6 +18,8 @@ export function createComponentInstance(vnode, parent) {
         slots: {},
         provides: parent ? parent.provides : {}, // 这个很关键
         parent,
+        isMounted: false,
+        subTree: {},
         emit: () => { },
     };
 
@@ -53,7 +56,9 @@ function setupStatefulComponent(instance) {
 function handleSetupResult(instance, setupResult) {
     // setup 方法返回一个对象 : setup(){ return {msg: 'hello'} }
     if (typeof setupResult === 'object') {
-        instance.setupState = setupResult;
+        // 之前是直接返回 setupResult，现在需要处理响应式
+        // 使得 render 函数中访问 this.count 即是访问 this.count.value
+        instance.setupState = proxyRefs(setupResult);
     } else if (typeof setupResult === 'function') { // TODO
         instance.render = setupResult;
     }
