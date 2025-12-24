@@ -6,15 +6,19 @@ function createElement(type) {
     return document.createElement(type);
 }
 
-function patchProp(el, key, value) {
+function patchProp(el, key, preVal, nextVal) {
     // 具体的 click -> 通用
     // on + EventName
     const isOn = (key: string) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
         const event = key.slice(2).toLowerCase();
-        el.addEventListener(event, value);
+        el.addEventListener(event, nextVal);
     } else {
-        el.setAttribute(key, value);
+        if (nextVal === null || nextVal === undefined) {
+            el.removeAttribute(key);
+        } else {
+            el.setAttribute(key, nextVal);
+        }
     }
 }
 
