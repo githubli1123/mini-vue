@@ -7,7 +7,13 @@ import { effect } from "../reactivity/effect";
 
 export function createRenderer(options) {
 
-    const { createElement: hostCreateElement, patchProp: hostPatchProp, insert: hostInsert } = options;
+    const {
+        createElement: hostCreateElement,
+        patchProp: hostPatchProp,
+        insert: hostInsert,
+        remove: hostRemove,
+        setElementText: hostSetElementText
+    } = options;
 
     function render(vnode, container) {
         // patch
@@ -50,18 +56,18 @@ export function createRenderer(options) {
 
     function processFragment(n1, n2, container, parentComponent) {
         // Implementation for processing Fragment
-        mountChildren(n2, container, parentComponent);
+        mountChildren(n2.children, container, parentComponent);
     }
 
     function processElement(n1, n2, container, parentComponent) {
         if (!n1) {
             mountElement(n2, container, parentComponent);
         } else {
-            patchElement(n1, n2, container);
+            patchElement(n1, n2, container, parentComponent);
         }
     }
 
-    function patchElement(n1, n2, container) {
+    function patchElement(n1, n2, container, parentComponent) {
         console.log('patchElement');
         console.log(n1);
         console.log(n2);
@@ -69,7 +75,44 @@ export function createRenderer(options) {
         const oldProps = n1.props || EMPTY_OBJ;
         const newProps = n2.props || EMPTY_OBJ;
         const el = (n2.el = n1.el);  // important : reuse the old element
+        patchChildren(n1, n2, el, parentComponent);
         patchProps(oldProps, newProps, el);
+    }
+
+    function patchChildren(n1, n2, container, parentComponent) {
+        const prevShapeFlag = n1.shapeFlag;
+        const newShapeFlag = n2.shapeFlag;
+        const c1 = n1.children;
+        const c2 = n2.children;
+
+        if (newShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+            if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+                // 1. 把老的 children 清空
+                unmountChildren(c1);
+                // 2. 设置新的 text
+                hostSetElementText(container, c2);
+            } else {
+                // 老的就是 text
+                if (c1 !== c2) {
+                    hostSetElementText(container, c2);
+                }
+            }
+        } else {
+            if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+                // 老的 children 是 text 
+                // 新的 children 是 array
+                hostSetElementText(container, '');
+                mountChildren(c2, container, parentComponent);
+            }
+        }
+    }
+
+    function unmountChildren(children) {
+        for (let i = 0; i < children.length; i++) {
+            const el = children[i].el;
+            // remove
+            hostRemove(el);
+        }
     }
 
     function patchProps(oldProps, newProps, el) {
@@ -107,7 +150,7 @@ export function createRenderer(options) {
             el.textContent = children;
         } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             // array_children
-            mountChildren(vnode, el, parentComponent);
+            mountChildren(vnode.children, el, parentComponent);
         }
         // props
         const { props } = vnode;
@@ -119,8 +162,14 @@ export function createRenderer(options) {
         hostInsert(el, container);
     }
 
-    function mountChildren(vnode, container, parentComponent) {
-        vnode.children.forEach((child) => {
+    /**
+     * 
+     * @param children 组件的 children
+     * @param container 挂载到的 element 位置
+     * @param parentComponent 维护组件的父子关系，涉及到 provide/inject
+     */
+    function mountChildren(children, container, parentComponent) {
+        children.forEach((child) => {
             patch(null, child, container, parentComponent);
         });
     }
