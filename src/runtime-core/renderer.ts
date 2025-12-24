@@ -179,6 +179,50 @@ export function createRenderer(options) {
                 i++;
             }
         }
+        // 中间对比
+        else {
+            let s1 = i;
+            let s2 = i;
+
+            const toBePatched = e2 - s2 + 1;
+            let patched = 0;
+            const keyToNewIndexMap = new Map();
+            for (let i = s2; i <= e2; i++) {
+                const nextChild = c2[i];
+                keyToNewIndexMap.set(nextChild.key, i);
+            }
+
+            for (let i = s1; i <= e1; i++) {
+                const prevChild = c1[i];
+
+                if (patched >= toBePatched) {
+                    hostRemove(prevChild.el);
+                    continue;
+                }
+
+                let newIndex;
+                // 查看当前老节点在新的 children 中是否存在
+                if (prevChild.key != null) {
+                    // 使用优化的查找方式
+                    newIndex = keyToNewIndexMap.get(prevChild.key);
+                } else {
+                    // 没有 key 值，使用暴力查找
+                    for (let j = s2; j <= e2; j++) {
+                        if (isSameVNodeType(prevChild, c2[j])) {
+                            newIndex = j;
+                            break;
+                        }
+                    }
+                }
+                // 当前老节点在新的 children 中不存在，直接删除
+                if (newIndex === undefined) {
+                    hostRemove(prevChild.el);
+                } else {
+                    patch(prevChild, c2[newIndex], container, parentComponent, parentAnchor);
+                    patched++;
+                }
+            }
+        }
     }
 
     function unmountChildren(children) {
