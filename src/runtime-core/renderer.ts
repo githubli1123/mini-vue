@@ -187,6 +187,14 @@ export function createRenderer(options) {
             const toBePatched = e2 - s2 + 1;
             let patched = 0;
             const keyToNewIndexMap = new Map();
+            // 含有两层信息，索引表示新节点的位置，值表示老节点的位置
+            // 以新节点为基准，找到老节点和新节点一样的时候，把老节点的位置记录下来
+            /** 整个长度就是新节点的数量，新节点和老节点一样的时候，把老节点的相对位置给到新节点 */
+            const newIndexToOldIndexMap = new Array(toBePatched);
+            newIndexToOldIndexMap.fill(0); // 0 代表没有映射关系
+            let moved = false;
+            let maxNewIndexSoFar = 0;
+
             for (let i = s2; i <= e2; i++) {
                 const nextChild = c2[i];
                 keyToNewIndexMap.set(nextChild.key, i);
@@ -195,6 +203,7 @@ export function createRenderer(options) {
             for (let i = s1; i <= e1; i++) {
                 const prevChild = c1[i];
 
+                // 优化点, 当老的包含所有新的节点时，提前结束
                 if (patched >= toBePatched) {
                     hostRemove(prevChild.el);
                     continue;
@@ -218,8 +227,37 @@ export function createRenderer(options) {
                 if (newIndex === undefined) {
                     hostRemove(prevChild.el);
                 } else {
-                    patch(prevChild, c2[newIndex], container, parentComponent, parentAnchor);
+                    if (newIndex >= maxNewIndexSoFar) {
+                        maxNewIndexSoFar = newIndex;
+                    } else {
+                        moved = true;
+                    }
+                    newIndexToOldIndexMap[newIndex - s2] = i + 1; // +1 是为了防止 0 的出现, 0 有特殊含义
+                    patch(prevChild, c2[newIndex], container, parentComponent, parentAnchor); // 修改更新
                     patched++;
+                }
+            }
+            // 到达这里说明老的长度一定是小于等于新的长度，可能存在移动和新增
+
+            // increasingNewIndexSequence 存储的是不需要移动的位置（在新节点中）
+            const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap);
+            let j = increasingNewIndexSequence.length - 1;
+
+            // 找出新节点中，哪些节点可以留在原位，哪些需要移动，哪些是新增的
+            for (let i = toBePatched - 1; i >= 0; i--) {
+                const nextIndex = i + s2;
+                const nextChild = c2[nextIndex];
+                const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+                if (newIndexToOldIndexMap[i] === 0) {
+                    patch(null, nextChild, container, parentComponent, anchor);
+                }
+                else if (moved) {
+                    if (j < 0 || i !== increasingNewIndexSequence[j]) {
+                        console.log('need move index', i);
+                        hostInsert(nextChild.el, container, anchor); // 移动
+                    } else {
+                        j--;
+                    }
                 }
             }
         }
@@ -337,4 +375,50 @@ export function createRenderer(options) {
     return {
         createApp: createAppAPI(render)
     }
+}
+
+/**
+ * 获取最长递增子序列
+ * 
+ * 返回的数组表示不需要移动的节点在新 children 中的位置，这些节点保持了在旧 children 中的相对顺序
+ */
+function getSequence(arr: number[]): number[] {
+    const p = arr.slice();
+    const result = [0];
+    let i, j, u, v, c;
+    const len = arr.length;
+    for (i = 0; i < len; i++) {
+        const arrI = arr[i];
+        if (arrI !== 0) {
+            j = result[result.length - 1];
+            if (arr[j] < arrI) {
+                p[i] = j;
+                result.push(i);
+                continue;
+            }
+            u = 0;
+            v = result.length - 1;
+            while (u < v) {
+                c = (u + v) >> 1;
+                if (arr[result[c]] < arrI) {
+                    u = c + 1;
+                } else {
+                    v = c;
+                }
+            }
+            if (arrI < arr[result[u]]) {
+                if (u > 0) {
+                    p[i] = result[u - 1];
+                }
+                result[u] = i;
+            }
+        }
+    }
+    u = result.length;
+    v = result[u - 1];
+    while (u-- > 0) {
+        result[u] = v;
+        v = p[v];
+    }
+    return result;
 }
